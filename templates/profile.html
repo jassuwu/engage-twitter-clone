@@ -1,228 +1,149 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Profile | Eng@ge!</title>
-
-	<!-- Bootstrap CSS -->
-	<link rel="stylesheet" href="{{ url_for('static', filename='bs/css/united.min.css') }}">
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-
-<body>
-
-	<nav class="navbar navbar-default" role="navigation">
-		<div class="container-fluid">
-			<!-- Brand and toggle get grouped for better mobile display -->
-			<div class="navbar-header">
-				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
-					<span class="sr-only">Toggle navigation</span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-				</button>
-				<a class="navbar-brand" href="./">Eng@ge!</a>
-			</div>
-
-			<!-- Collect the nav links, forms, and other content for toggling -->
-			<div class="collapse navbar-collapse navbar-ex1-collapse">
-				<ul class="nav navbar-nav navbar-right">
-					<li><a href="{{url_for('timeline')}}">Timeline</a></li>
-					<li class="active"><a href="{{ url_for('profile') }}">My Profile</a></li>
-					<li class=""><a href="{{url_for('logout')}}">Logout</a></li>
-				</ul>
-			</div><!-- /.navbar-collapse -->
-		</div>
-	</nav>
-
-	<div class="container">
-		<div class="row">
-			<div class="col-lg-12">
-				<h3 class="text-center bold">My Profile</h3>
-			</div>
-			<div class="col-lg-4">
-				<div class="panel panel-default">
-					<div class="panel-body">
-						<div class="row pad">
-							<div class="col-lg-12">
-								<img src="{{ URL + user.image }}" class="img-responsive img-circle center-block"
-									alt="Image" style="height: 220px;" />
-							</div>
-						</div>
+{% extends "base.html" %}
+{% block title %} @ | Profile {% endblock %}
+{% block content %}
+<div class="row">
+	<div class="col-lg-12">
+		<h3 class="text-center bold">My Profile</h3>
+	</div>
+	<div class="col-lg-4">
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<div class="row pad">
+					<div class="col-lg-12">
+						<img src="{{ URL + user.image }}" class="img-responsive img-circle center-block" alt="Image"
+							style="height: 220px;" />
 					</div>
-					<ul class="list-group">
-						<li class="list-group-item">
-							<i class="glyphicon glyphicon-user"></i> NAME:
-							<strong class="pull-right">{{ user.name }}</strong>
+				</div>
+			</div>
+			<ul class="list-group">
+				<li class="list-group-item">
+					<i class="glyphicon glyphicon-user"></i> NAME:
+					<strong class="pull-right">{{ user.name }}</strong>
+				</li>
+				<li class="list-group-item">
+					<i class="glyphicon glyphicon-th"></i> Handle:
+					<strong class="pull-right"><em>@{{ user.username }}</em></strong>
+				</li>
+				<li class="list-group-item">
+					<i class="glyphicon glyphicon-calendar"></i> MEMBER SINCE:
+					<strong class="pull-right">{{ user.joinDate.strftime("%B %d, %Y") }}</strong>
+				</li>
+				<li class="list-group-item">
+					<i class="glyphicon glyphicon-th-list"></i> FOLLOWERS COUNT:
+					<strong class="pull-right">{{followed_by|length}}</strong>
+				</li>
+				{% if displayFollow %}
+				<li class="list-group-item">
+					<a href="{{url_for('follow', username=user.username)}}">
+						<strong>
+							FOLLOW
+						</strong>
+					</a>
+				</li>
+				{% endif %}
+			</ul>
+		</div>
+	</div>
+
+	<div class="col-lg-5">
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<h4><strong>Activity</strong></h4>
+				<div role="tabpanel">
+					<!-- Nav tabs -->
+					<ul class="nav nav-tabs" role="tablist">
+						<li role="presentation" class="active">
+							<a href="#tweets" aria-controls="tweets" role="tab" data-toggle="tab">Tweets &amp;
+								Replies</a>
 						</li>
-						<li class="list-group-item">
-							<i class="glyphicon glyphicon-th"></i> Handle:
-							<strong class="pull-right"><em>@{{ user.username }}</em></strong>
+						<li role="presentation">
+							<a href="#followings" aria-controls="followings" role="tab" data-toggle="tab">Followers</a>
 						</li>
-						<li class="list-group-item">
-							<i class="glyphicon glyphicon-calendar"></i> MEMBER SINCE:
-							<strong class="pull-right">{{ user.joinDate.strftime("%B %d, %Y") }}</strong>
-						</li>
-						<li class="list-group-item">
-							<i class="glyphicon glyphicon-th-list"></i> FOLLOWERS COUNT:
-							<strong class="pull-right">{{followed_by|length}}</strong>
-						</li>
-						{% if displayFollow %}
-						<li class="list-group-item">
-							<a href="{{url_for('follow', username=user.username)}}">
-								<strong>
-									FOLLOW
-								</strong>
-							</a>
-						</li>
-						{% endif %}
 					</ul>
-				</div>
-			</div>
 
-			<div class="col-lg-5">
-				<div class="panel panel-default">
-					<div class="panel-body">
-						<h4><strong>Activity</strong></h4>
-						<div role="tabpanel">
-							<!-- Nav tabs -->
-							<ul class="nav nav-tabs" role="tablist">
-								<li role="presentation" class="active">
-									<a href="#tweets" aria-controls="tweets" role="tab" data-toggle="tab">Tweets &amp;
-										Replies</a>
-								</li>
-								<li role="presentation">
-									<a href="#followings" aria-controls="followings" role="tab"
-										data-toggle="tab">Followers</a>
-								</li>
-							</ul>
-
-							<!-- Tab panes -->
-							<div class="tab-content">
-								<div role="tabpanel" class="tab-pane active" id="tweets">
-									{% for tweet in tweets %}
-									<div class="row">
-										<div class="col-lg-12">
-											<div class="row pad">
-												<div class="col-lg-2">
-													<img src="{{ URL + current_user.image }}" class="img-circle"
-														style="width: 60px; height: 60px;" />
-												</div>
-												<div class="col-lg-10">
-													<div>
-														<strong class="mid">{{ tweet.user.name }}</strong>
-														<small><em>@{{tweet.user.username}}</em></small> .
-														{{ (current_time - tweet.date_created)|time_since }}
-													</div>
-													<div class="pad">
-														{{tweet.text}}
-													</div>
-												</div>
-											</div>
+					<!-- Tab panes -->
+					<div class="tab-content">
+						<div role="tabpanel" class="tab-pane active" id="tweets">
+							{% for tweet in tweets %}
+							<div class="row">
+								<div class="col-lg-12">
+									<div class="row pad">
+										<div class="col-lg-2">
+											<img src="{{ URL + tweet.user.image }}" class="img-circle"
+												style="width: 60px; height: 60px;" />
 										</div>
-									</div>
-									{% endfor %}
-								</div>
-								<div role="tabpanel" class="tab-pane" id="followings">
-									{% for follower in followed_by %}
-									<div class="row">
-										<div class="col-lg-12">
-											<div class="row pad">
-												<div class="col-lg-2">
-													<img src="{{ follower.image }}" class="img-circle"
-														style="width: 60px; height: 60px;" />
-												</div>
-												<div class="col-lg-10">
-													<div>
-														<strong class="mid">{{ follower.name }}</strong>
-														<a href="{{url_for('profile', username=follower.username)}}">
-															<small><em>@{{
-																	follower.username }}</em></small>
-														</a>
-													</div>
-												</div>
-												<div class="row pad">
-													<hr />
-													<div class="pl-4 col-lg-12">
-														<i class="glyphicon glyphicon-th-list"></i> {{
-														follower.followed_by.all()|length }}
-													</div>
-												</div>
+										<div class="col-lg-10">
+											<div>
+												<strong class="mid">{{ tweet.user.name }}</strong>
+												<small><em>@{{tweet.user.username}}</em></small> .
+												{{ (current_time - tweet.date_created)|time_since }}
+											</div>
+											<div class="pad">
+												{{tweet.text}}
 											</div>
 										</div>
 									</div>
 								</div>
-								{% endfor %}
+							</div>
+							{% endfor %}
+						</div>
+						<div role="tabpanel" class="tab-pane" id="followings">
+							{% for follower in followed_by %}
+							<div class="row">
+								<div class="col-lg-12">
+									<div class="row pad">
+										<div class="col-lg-2">
+											<img src="{{ follower.image }}" class="img-circle"
+												style="width: 60px; height: 60px;" />
+										</div>
+										<div class="col-lg-10">
+											<div>
+												<strong class="mid">{{ follower.name }}</strong>
+												<a href="{{url_for('profile', username=follower.username)}}">
+													<small><em>@{{
+															follower.username }}</em></small>
+												</a>
+											</div>
+										</div>
+										<div class="row pad">
+											<hr />
+											<div class="pl-4 col-lg-12">
+												<i class="glyphicon glyphicon-th-list"></i> {{
+												follower.followed_by.all()|length }}
+											</div>
+										</div>
+									</div>
+								</div>
 							</div>
 						</div>
+						{% endfor %}
 					</div>
 				</div>
 			</div>
 		</div>
+	</div>
+</div>
 
-		<div class="col-lg-3">
-			<div class="panel panel-default">
-				<div class="panel-body">
-					<h3>Who To Watch</h3>
+<div class="col-lg-3">
+	<div class="panel panel-default">
+		<div class="panel-body">
+			<h3>Who To Watch</h3>
+		</div>
+		<ul class="list-group">
+			{% for who in whoToWatch %}
+			<li class="list-group-item">
+				{{who.name}}
+				<div>
+					<strong> <em>
+							<a href="{{url_for('profile', username=who.username)}}">@{{who.username}}</a>
+						</em> </strong>
+					<span class="pull-right">
+						{{who.followed_by.count()}} Followers
+					</span>
 				</div>
-				<ul class="list-group">
-					<li class="list-group-item">
-						The English Premier League
-						<div>
-							<strong>@theEPL</strong>
-							<span class="pull-right">
-								3,949,335 Followers
-							</span>
-						</div>
-					</li>
-					<li class="list-group-item">
-						Barclays Bank
-						<div>
-							<strong>@barclarysBank</strong>
-							<span class="pull-right">
-								3,451 Followers
-							</span>
-						</div>
-					</li>
-					<li class="list-group-item">
-						Leonardo Rumlow
-						<div>
-							<strong>@rummYLEO</strong>
-							<span class="pull-right">
-								350 Followers
-							</span>
-						</div>
-					</li>
-					<li class="list-group-item">
-						The Cable People
-						<div>
-							<strong>@theCablePeeps</strong>
-							<span class="pull-right">
-								19,004 Followers
-							</span>
-						</div>
-					</li>
-				</ul>
-			</div>
-		</div>
+			</li>
+			{% endfor %}
+		</ul>
 	</div>
-
-	<footer>
-		<div class="row pad">
-			<div class="col-lg-12 text-center">
-				Copyright &copy; 2017 <strong> <a href="./">Eng@ge!</a></strong>
-			</div>
-		</div>
-	</footer>
-	</div>
-
-	<!-- jQuery -->
-	<script src="{{ url_for('static', filename='bs/js/jquery.min.js') }}"></script>
-	<!-- Bootstrap JavaScript -->
-	<script src="{{ url_for('static', filename='bs/js/bootstrap.min.js') }}"></script>
-</body>
-
-</html>
+</div>
+{% endblock %}

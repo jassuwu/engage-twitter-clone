@@ -18,7 +18,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 def index():
     # Handling the GET of the login form
     form = LoginForm()
-    return render_template('index.html', form=form)
+    return render_template('index.html', form=form, wearehome=True)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -68,7 +68,10 @@ def profile(username):
         displayFollow = False
     if current_user in followedBy:
         displayFollow = False
-    return render_template('profile.html', URL=URL, user=user, followed_by=followedBy, tweets=tweets, current_time=datetime.now(), displayFollow=displayFollow)
+
+    whoToWatch = User.query.filter(User.id != user.id).order_by(
+        db.func.random()).limit(4).all()
+    return render_template('profile.html', URL=URL, user=user, followed_by=followedBy, tweets=tweets, current_time=datetime.now(), displayFollow=displayFollow, whoToWatch=whoToWatch)
 
 
 @app.route('/timeline', defaults={"username": None})
@@ -83,12 +86,21 @@ def timeline(username):
         user = User.query.filter_by(username=username).first()
         if not user:
             abort(404)
+        # Get current users tweets
+        userTweets = Tweet.query.filter_by(user=user).order_by(
+            Tweet.date_created.desc()).all()
+        tweetCount = len(userTweets)
     else:
         user = current_user
-    # Get current users tweets
-    tweets = Tweet.query.filter_by(user=user).order_by(
-        Tweet.date_created.desc()).all()
-    return render_template('timeline.html', form=form, URL=URL, tweets=tweets, tweetCount=len(tweets), current_time=datetime.now(), user=user)
+        # Get tweets by all the people followed
+        tweets = Tweet.query.join(followers, (followers.c.followee_id == Tweet.user_id)).filter(
+            followers.c.follower_id == current_user.id).order_by(Tweet.date_created.desc()).all()
+        tweetCount = Tweet.query.filter_by(user=user).order_by(
+            Tweet.date_created.desc()).count()
+
+    whoToWatch = User.query.filter(User.id != user.id).order_by(
+        db.func.random()).limit(4).all()
+    return render_template('timeline.html', form=form, URL=URL, tweets=tweets, tweetCount=tweetCount, current_time=datetime.now(), user=user, whoToWatch=whoToWatch)
 
 
 @app.route('/posttweet', methods=['POST'])
@@ -121,7 +133,8 @@ def register():
                         username=form.username.data, image=image_url, password=generate_password_hash(form.password.data), joinDate=datetime.now())
         db.session.add(new_user)
         db.session.commit()
-        return redirect(url_for('login'))  # Redirect to login
+        login_user(new_user)  # Login the user
+        return redirect(url_for('profile'))  # Redirect to profile
     # Rendering the page on GET.
     return render_template('register.html', form=form)
 
