@@ -11,13 +11,18 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, cur
 from wtforms import StringField, IntegerField, PasswordField, BooleanField
 from wtforms.validators import InputRequired, Length
 
+# env imports
+import os
+dbURI = os.getenv("DATABASE_URL")
+if not dbURI:
+    dbURI = 'mysql://admin:admin@localhost:3306/engage'
 
 URL = "http://localhost:5000"
 
 # Initalize the app
 app = Flask(__name__)
 # XAMPP db
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://admin:admin@localhost:3306/engage'
+app.config['SQLALCHEMY_DATABASE_URI'] = dbURI
 app.config['SECRET_KEY'] = 'dev'
 app.config['UPLOADED_PHOTOS_DEST'] = 'images'  # Flask-Reupload
 app.config["UPLOADS_AUTOSERVE"] = True  # Flask-Reuploaded
