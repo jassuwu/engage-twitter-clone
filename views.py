@@ -60,7 +60,7 @@ def profile(username):
 
     tweets = Tweet.query.filter_by(user=user).order_by(
         Tweet.date_created.desc()).all()
-    return render_template('profile.html', URL=URL, current_user=user, tweets=tweets, current_time=datetime.now())
+    return render_template('profile.html', URL=URL, current_user=user, followed_by=user.followed_by.all(), tweets=tweets, current_time=datetime.now())
 
 
 @app.route('/timeline', defaults={"username": None})
@@ -116,3 +116,13 @@ def register():
         return redirect(url_for('login'))  # Redirect to login
     # Rendering the page on GET.
     return render_template('register.html', form=form)
+
+
+@app.route('/follow/<username>')
+@login_required
+def follow(username):
+    user_to_follow = User.query.filter_by(username=username).first()
+    # (Below) This is insane, that's all I had to do to add followers.
+    current_user.following.append(user_to_follow)
+    db.session.commit()
+    return redirect(url_for('profile', username=username))

@@ -22,11 +22,22 @@ class User(UserMixin, db.Model):  # User Model
     joinDate = db.Column(db.DateTime)
     # 3. added tweets backref when making the timeline
     tweets = db.relationship('Tweet', backref='user', lazy='dynamic')
-    # 4. added follwing backref when adding the follower model
+    # 4. added following backref when adding the follower model
     following = db.relationship(
-        'User', secondary=followers, primaryjoin=(followers.c.follower_id == id),
+        'User', secondary=followers,
+        primaryjoin=(followers.c.follower_id == id),
         secondaryjoin=(followers.c.followee_id == id),
-        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
+        backref=db.backref('followers', lazy='dynamic'),
+        lazy='dynamic'
+    )
+    # 5. added after the prev backref
+    followed_by = db.relationship(
+        'User', secondary=followers,
+        primaryjoin=(followers.c.followee_id == id),
+        secondaryjoin=(followers.c.follower_id == id),
+        backref=db.backref('followees', lazy='dynamic'),
+        lazy='dynamic'
+    )
 
 
 class Tweet(db.Model):  # Tweet Model
