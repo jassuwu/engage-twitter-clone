@@ -5,6 +5,13 @@ from app import db
 from flask_login import LoginManager, UserMixin
 
 
+# The relationship table
+followers = db.Table('follower',
+                     db.Column('follower_id', db.Integer,
+                               db.ForeignKey('user.id')),
+                     db.Column('followee_id', db.Integer, db.ForeignKey('user.id')))
+
+
 class User(UserMixin, db.Model):  # User Model
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
@@ -15,6 +22,11 @@ class User(UserMixin, db.Model):  # User Model
     joinDate = db.Column(db.DateTime)
     # 3. added tweets backref when making the timeline
     tweets = db.relationship('Tweet', backref='user', lazy='dynamic')
+    # 4. added follwing backref when adding the follower model
+    following = db.relationship(
+        'User', secondary=followers, primaryjoin=(followers.c.follower_id == id),
+        secondaryjoin=(followers.c.followee_id == id),
+        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
 
 
 class Tweet(db.Model):  # Tweet Model

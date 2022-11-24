@@ -1,10 +1,10 @@
 # thisProject imports
 from app import app, URL, photos, db
-from models import User, Tweet
+from models import User, Tweet, followers
 from forms import RegisterForm, LoginForm, TweetForm
 
 # Flask imports
-from flask import Flask, render_template, url_for, redirect, request
+from flask import Flask, render_template, url_for, redirect, request, abort
 from flask_login import login_user, login_required, current_user, logout_user
 from flask_uploads import UploadSet, configure_uploads, IMAGES
 
@@ -47,24 +47,40 @@ def logout():  # Logout route that works due to Flask-Login
     return redirect(url_for('index'))
 
 
-@app.route('/profile')
-def profile():
+@app.route('/profile', defaults={'username': None})
+@app.route('/profile/<username>')
+def profile(username):
     # Handling the GET by passing it the profile content
-    return render_template('profile.html', URL=URL, current_user=current_user)
+    if username:
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            abort(404)
+    else:
+        user = current_user
+
+    tweets = Tweet.query.filter_by(user=user).order_by(
+        Tweet.date_created.desc()).all()
+    return render_template('profile.html', URL=URL, current_user=user, tweets=tweets, current_time=datetime.now())
 
 
-@app.route('/timeline')
+@app.route('/timeline', defaults={"username": None})
+@app.route('/timeline/<username>')
 @login_required
-def timeline():
+def timeline(username):
     # Handling the GET for the tweet form
     form = TweetForm()
 
     # Get the user id
-    user_id = current_user.id
+    if username:
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            abort(404)
+    else:
+        user = current_user
     # Get current users tweets
-    tweets = Tweet.query.filter_by(user_id=user_id).order_by(
+    tweets = Tweet.query.filter_by(user=user).order_by(
         Tweet.date_created.desc()).all()
-    return render_template('timeline.html', form=form, URL=URL, tweets=tweets, current_time=datetime.now())
+    return render_template('timeline.html', form=form, URL=URL, tweets=tweets, tweetCount=len(tweets), current_time=datetime.now(), user=user)
 
 
 @app.route('/posttweet', methods=['POST'])
