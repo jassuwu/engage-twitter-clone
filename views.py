@@ -60,7 +60,15 @@ def profile(username):
 
     tweets = Tweet.query.filter_by(user=user).order_by(
         Tweet.date_created.desc()).all()
-    return render_template('profile.html', URL=URL, current_user=user, followed_by=user.followed_by.all(), tweets=tweets, current_time=datetime.now())
+
+    followedBy = user.followed_by.all()
+
+    displayFollow = True
+    if current_user == user:
+        displayFollow = False
+    if current_user in followedBy:
+        displayFollow = False
+    return render_template('profile.html', URL=URL, user=user, followed_by=followedBy, tweets=tweets, current_time=datetime.now(), displayFollow=displayFollow)
 
 
 @app.route('/timeline', defaults={"username": None})

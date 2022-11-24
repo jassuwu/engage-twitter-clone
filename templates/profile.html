@@ -14,17 +14,6 @@
 
 <body>
 
-	<div class="container-fluid">
-		<div class="row" id="banner">
-			<div class="title col-lg-12">
-				<p class="title">
-					<a href="./">ENG@GE!</a>
-				</p>
-				<p class="subtitle">...the awesome social platform</p>
-			</div>
-		</div>
-	</div>
-
 	<nav class="navbar navbar-default" role="navigation">
 		<div class="container-fluid">
 			<!-- Brand and toggle get grouped for better mobile display -->
@@ -59,7 +48,7 @@
 					<div class="panel-body">
 						<div class="row pad">
 							<div class="col-lg-12">
-								<img src="{{ URL + current_user.image }}" class="img-responsive img-circle center-block"
+								<img src="{{ URL + user.image }}" class="img-responsive img-circle center-block"
 									alt="Image" style="height: 220px;" />
 							</div>
 						</div>
@@ -67,20 +56,29 @@
 					<ul class="list-group">
 						<li class="list-group-item">
 							<i class="glyphicon glyphicon-user"></i> NAME:
-							<strong class="pull-right">{{ current_user.name }}</strong>
+							<strong class="pull-right">{{ user.name }}</strong>
 						</li>
 						<li class="list-group-item">
 							<i class="glyphicon glyphicon-th"></i> Handle:
-							<strong class="pull-right"><em>@{{ current_user.username }}</em></strong>
+							<strong class="pull-right"><em>@{{ user.username }}</em></strong>
 						</li>
 						<li class="list-group-item">
 							<i class="glyphicon glyphicon-calendar"></i> MEMBER SINCE:
-							<strong class="pull-right">{{ current_user.joinDate.strftime("%B %d, %Y") }}</strong>
+							<strong class="pull-right">{{ user.joinDate.strftime("%B %d, %Y") }}</strong>
 						</li>
 						<li class="list-group-item">
 							<i class="glyphicon glyphicon-th-list"></i> FOLLOWERS COUNT:
 							<strong class="pull-right">{{followed_by|length}}</strong>
 						</li>
+						{% if displayFollow %}
+						<li class="list-group-item">
+							<a href="{{url_for('follow', username=user.username)}}">
+								<strong>
+									FOLLOW
+								</strong>
+							</a>
+						</li>
+						{% endif %}
 					</ul>
 				</div>
 			</div>
@@ -140,82 +138,85 @@
 												<div class="col-lg-10">
 													<div>
 														<strong class="mid">{{ follower.name }}</strong>
-														<small><em>@{{ follower.username }}</em></small>
+														<a href="{{url_for('profile', username=follower.username)}}">
+															<small><em>@{{
+																	follower.username }}</em></small>
+														</a>
 													</div>
-													<div class="row pad">
-														<hr />
-														<div class="col-lg-12">
-															<i class="glyphicon glyphicon-th-list"></i> {{
-															follower.followed_by.all()|length }}
-															&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-														</div>
+												</div>
+												<div class="row pad">
+													<hr />
+													<div class="pl-4 col-lg-12">
+														<i class="glyphicon glyphicon-th-list"></i> {{
+														follower.followed_by.all()|length }}
 													</div>
 												</div>
 											</div>
 										</div>
 									</div>
-									{% endfor %}
 								</div>
+								{% endfor %}
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-
-			<div class="col-lg-3">
-				<div class="panel panel-default">
-					<div class="panel-body">
-						<h3>Who To Watch</h3>
-					</div>
-					<ul class="list-group">
-						<li class="list-group-item">
-							The English Premier League
-							<div>
-								<strong>@theEPL</strong>
-								<span class="pull-right">
-									3,949,335 Followers
-								</span>
-							</div>
-						</li>
-						<li class="list-group-item">
-							Barclays Bank
-							<div>
-								<strong>@barclarysBank</strong>
-								<span class="pull-right">
-									3,451 Followers
-								</span>
-							</div>
-						</li>
-						<li class="list-group-item">
-							Leonardo Rumlow
-							<div>
-								<strong>@rummYLEO</strong>
-								<span class="pull-right">
-									350 Followers
-								</span>
-							</div>
-						</li>
-						<li class="list-group-item">
-							The Cable People
-							<div>
-								<strong>@theCablePeeps</strong>
-								<span class="pull-right">
-									19,004 Followers
-								</span>
-							</div>
-						</li>
-					</ul>
-				</div>
-			</div>
 		</div>
 
-		<footer>
-			<div class="row pad">
-				<div class="col-lg-12 text-center">
-					Copyright &copy; 2017 <strong> <a href="./">Eng@ge!</a></strong>
+		<div class="col-lg-3">
+			<div class="panel panel-default">
+				<div class="panel-body">
+					<h3>Who To Watch</h3>
 				</div>
+				<ul class="list-group">
+					<li class="list-group-item">
+						The English Premier League
+						<div>
+							<strong>@theEPL</strong>
+							<span class="pull-right">
+								3,949,335 Followers
+							</span>
+						</div>
+					</li>
+					<li class="list-group-item">
+						Barclays Bank
+						<div>
+							<strong>@barclarysBank</strong>
+							<span class="pull-right">
+								3,451 Followers
+							</span>
+						</div>
+					</li>
+					<li class="list-group-item">
+						Leonardo Rumlow
+						<div>
+							<strong>@rummYLEO</strong>
+							<span class="pull-right">
+								350 Followers
+							</span>
+						</div>
+					</li>
+					<li class="list-group-item">
+						The Cable People
+						<div>
+							<strong>@theCablePeeps</strong>
+							<span class="pull-right">
+								19,004 Followers
+							</span>
+						</div>
+					</li>
+				</ul>
 			</div>
-		</footer>
+		</div>
+	</div>
+
+	<footer>
+		<div class="row pad">
+			<div class="col-lg-12 text-center">
+				Copyright &copy; 2017 <strong> <a href="./">Eng@ge!</a></strong>
+			</div>
+		</div>
+	</footer>
 	</div>
 
 	<!-- jQuery -->
