@@ -18,7 +18,7 @@
                 <li class="active"><a href="{{url_for('timeline')}}">Timeline</a></li>
                 <li class=""><a href="{{url_for('profile')}}">My Profile</a></li>
                 <li class=""><a href="{{url_for('logout')}}">Logout</a></li>
-                {% elif wearehome %}
+                {% elif current_user.is_authenticated == False or wearehome %}
                 <li class=""><a href="{{url_for('register')}}">Sign Up</a></li>
                 <li class=""><a href="#login" data-toggle="modal" data-keyboard="false">Login</a></li>
                 {% endif %}
