@@ -147,3 +147,8 @@ def follow(username):
     current_user.following.append(user_to_follow)
     db.session.commit()
     return redirect(url_for('profile', username=username))
+
+
+@app.errorhandler(404)
+def invalid_route(e):
+    return jsonify({'StatusCode': 404, 'message': 'Route not found'})
