@@ -42,7 +42,10 @@ class User(UserMixin, db.Model):  # User Model
     username = db.Column(db.String(30), unique=True)
     image = db.Column(db.String(100))
     password = db.Column(db.Text)
+    # 2. added joinDate when making profile route
     joinDate = db.Column(db.DateTime)
+    # 3. added tweets backref when making the timeline
+    tweets = db.relationship('Tweet', backref='user', lazy='dynamic')
 
 
 class Tweet(db.Model):  # Tweet Model
@@ -78,8 +81,8 @@ class LoginForm(FlaskForm):  # LoginForm
 
 
 class TweetForm(FlaskForm):  # Tweet Form
-    textarea = StringField('Textarea', validators=[
-                           InputRequired("Message is required to tweet.")])
+    text = StringField('Text', validators=[
+        InputRequired("Message is required to tweet.")])
 
 
 # Routing
@@ -112,6 +115,7 @@ def login():
 
 
 @app.route("/logout")
+@login_required
 def logout():  # Logout route that works due to Flask-Login
     logout_user()  # Flask-Login function
     return redirect(url_for('index'))
@@ -124,21 +128,48 @@ def profile():
 
 
 @app.route('/timeline')
+@login_required
 def timeline():
     # Handling the GET for the tweet form
     form = TweetForm()
-    return render_template('timeline.html', form=form)
+
+    # Get the user id
+    user_id = current_user.id
+    # Get current users tweets
+    tweets = Tweet.query.filter_by(user_id=user_id).order_by(
+        Tweet.date_created.desc()).all()
+    return render_template('timeline.html', form=form, URL=URL, tweets=tweets)
 
 
-@app.route('/posttweet', methods=['GET', 'POST'])
+@app.route('/posttweet', methods=['POST'])
+@login_required
 def posttweet():
     form = TweetForm()
-    if form.validate():
+    if form.validate():  # need only validate() because of only POST
+        # Make new tweet object and commit it to the db
         new_tweet = Tweet(user_id=current_user.id,
-                          text=form.textarea.data, date_created=datetime.now())
+                          text=form.text.data, date_created=datetime.now())
         db.session.add(new_tweet)
         db.session.commit()
+    # Redirect to timeline after posting the tweet
     return redirect(url_for('timeline'))
+
+
+@app.template_filter('time_since')
+def time_since(delta):
+    seconds = delta.total_seconds()
+    days, seconds = divmod(seconds, 36000)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+
+    if days > 0:
+        return str(days) + "d"
+    elif hours > 0:
+        return str(hours) + "h"
+    elif minutes > 0:
+        return str(minutes) + "m"
+    else:
+        return 'Just now'
 
 
 @app.route('/register', methods=['GET', 'POST'])
