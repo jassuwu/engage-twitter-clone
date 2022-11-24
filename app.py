@@ -1,13 +1,19 @@
-from flask import Flask, render_template, url_for, redirect
+# Flask imports
+from flask import Flask, render_template, url_for, redirect, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, PasswordField, BooleanField
-from wtforms.validators import InputRequired, Length
 from flask_wtf.file import FileField, FileAllowed
 from flask_uploads import UploadSet, configure_uploads, IMAGES
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
+
+# Non-flask imports
+from wtforms import StringField, IntegerField, PasswordField, BooleanField
+from wtforms.validators import InputRequired, Length
+from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+
+URL = "http://localhost:5000"
 
 # Initalize the app
 app = Flask(__name__)
@@ -19,7 +25,7 @@ app.config["UPLOADS_AUTOSERVE"] = True  # Flask-Reuploaded
 
 # Flask-login
 login_manager = LoginManager(app)
-
+login_manager.login_view = 'login'  # default view when unauthorized
 # Flask-Reuploaded
 photos = UploadSet('photos', IMAGES)
 configure_uploads(app, photos)
@@ -30,25 +36,29 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
-# User Model
-class User(UserMixin, db.Model):
+class User(UserMixin, db.Model):  # User Model
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     username = db.Column(db.String(30), unique=True)
     image = db.Column(db.String(100))
     password = db.Column(db.Text)
+    joinDate = db.Column(db.DateTime)
+
+
+class Tweet(db.Model):  # Tweet Model
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    text = db.Column(db.Text)
+    date_created = db.Column(db.DateTime)
+
 
 # Flask-Login
-
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# RegsitrationForm
 
-
-class RegisterForm(FlaskForm):
+class RegisterForm(FlaskForm):  # Regsitration Form
     name = StringField('Full name', validators=[InputRequired(
         'A full name is required for regsitration.'), Length(min=8, max=100, message='name should be within 8 and 100 characters.')])
     username = StringField('Username', validators=[InputRequired(
@@ -58,15 +68,19 @@ class RegisterForm(FlaskForm):
     image = FileField(validators=[FileAllowed(
         IMAGES, 'Only images are accepted.')])
 
-# LoginForm
 
-
-class LoginForm(FlaskForm):
+class LoginForm(FlaskForm):  # LoginForm
     username = StringField('Username', validators=[InputRequired(
         'Username is required for login.'), Length(min=4, max=30, message='username should be within 4 and 30 characters.')])
     password = PasswordField('Password', validators=[InputRequired(
         'A password is required for login.')])
     remember = BooleanField('Remember me')
+
+
+class TweetForm(FlaskForm):  # Tweet Form
+    textarea = StringField('Textarea', validators=[
+                           InputRequired("Message is required to tweet.")])
+
 
 # Routing
 
@@ -97,14 +111,34 @@ def login():
     return redirect(url_for('index'))  # ????
 
 
+@app.route("/logout")
+def logout():  # Logout route that works due to Flask-Login
+    logout_user()  # Flask-Login function
+    return redirect(url_for('index'))
+
+
 @app.route('/profile')
 def profile():
-    return render_template('profile.html')
+    # Handling the GET by passing it the profile content
+    return render_template('profile.html', URL=URL, current_user=current_user)
 
 
 @app.route('/timeline')
 def timeline():
-    return render_template('timeline.html')
+    # Handling the GET for the tweet form
+    form = TweetForm()
+    return render_template('timeline.html', form=form)
+
+
+@app.route('/posttweet', methods=['GET', 'POST'])
+def posttweet():
+    form = TweetForm()
+    if form.validate():
+        new_tweet = Tweet(user_id=current_user.id,
+                          text=form.textarea.data, date_created=datetime.now())
+        db.session.add(new_tweet)
+        db.session.commit()
+    return redirect(url_for('timeline'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -120,9 +154,9 @@ def register():
         )
         # Make a new user object and commit to the db
         new_user = User(name=form.name.data,
-                        username=form.username.data, password=generate_password_hash(form.password.data))
+                        username=form.username.data, image=image_url, password=generate_password_hash(form.password.data), joinDate=datetime.now())
         db.session.add(new_user)
         db.session.commit()
-        return redirect(url_for('profile'))  # Redirect to profile
+        return redirect(url_for('login'))  # Redirect to login
     # Rendering the page on GET.
     return render_template('register.html', form=form)
