@@ -11,18 +11,22 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, cur
 
 # Initalize the app
 app = Flask(__name__)
+# XAMPP db
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://admin:admin@localhost:3306/engage'
 app.config['SECRET_KEY'] = 'dev'
-app.config['UPLOADED_PHOTOS_DEST'] = 'images'
-app.config["UPLOADS_AUTOSERVE"] = True
+app.config['UPLOADED_PHOTOS_DEST'] = 'images'  # Flask-Reupload
+app.config["UPLOADS_AUTOSERVE"] = True  # Flask-Reuploaded
 
+# Flask-login
 login_manager = LoginManager(app)
 
+# Flask-Reuploaded
 photos = UploadSet('photos', IMAGES)
 configure_uploads(app, photos)
 
 # Initialize the db and migrate
 db = SQLAlchemy(app)
+# Flask-Migrate
 migrate = Migrate(app, db)
 
 
@@ -34,10 +38,14 @@ class User(UserMixin, db.Model):
     image = db.Column(db.String(100))
     password = db.Column(db.Text)
 
+# Flask-Login
+
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# RegsitrationForm
 
 
 class RegisterForm(FlaskForm):
@@ -50,6 +58,8 @@ class RegisterForm(FlaskForm):
     image = FileField(validators=[FileAllowed(
         IMAGES, 'Only images are accepted.')])
 
+# LoginForm
+
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[InputRequired(
@@ -58,29 +68,33 @@ class LoginForm(FlaskForm):
         'A password is required for login.')])
     remember = BooleanField('Remember me')
 
+# Routing
 
-@app.route('/', methods=['GET', 'POST'])
+
+@app.route('/')
 def index():
+    # Handling the GET of the login form
     form = LoginForm()
-
-    if form.validate_on_submit():
-        return {"username": form.username.data, "password": form.password.data, "rememberme?": form.remember.data}
-
     return render_template('index.html', form=form)
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Redirection to index if GET with /login
+    if request.method == 'GET':
+        return redirect(url_for('index'))
+    # Handling the POST of the login form
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if not user:
-            return 'The user doesn\'t exist.'
-        if check_password_hash(user.password, form.password.data):
+        if not user:  # User not available
+            return render_template('index.html', form=form, message='The user doesn\'t exist.')
+        if check_password_hash(user.password, form.password.data):  # Password match
             login_user(user, remember=form.remember.data)
             return redirect(url_for('profile'))
-        return 'Wrong password.'
-    return redirect(url_for('index'))
+        # Password mismatch
+        return render_template('index.html', form=form, message='Wrong password.')
+    return redirect(url_for('index'))  # ????
 
 
 @app.route('/profile')
@@ -95,17 +109,20 @@ def timeline():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    # Handling the GET and POST for register form
     form = RegisterForm()
-
     if form.validate_on_submit():
+        # Save image
         image_filename = photos.save(form.image.data)
+        # Generate image url ( This uses Flask-Reuploaded, since Flask-Uploads isn't being supported now.)
         image_url = url_for(
             "_uploads.uploaded_file", setname=photos.name, filename=image_filename
         )
-
+        # Make a new user object and commit to the db
         new_user = User(name=form.name.data,
                         username=form.username.data, password=generate_password_hash(form.password.data))
         db.session.add(new_user)
         db.session.commit()
-        return redirect(url_for('profile'))
+        return redirect(url_for('profile'))  # Redirect to profile
+    # Rendering the page on GET.
     return render_template('register.html', form=form)
