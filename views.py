@@ -4,7 +4,7 @@ from models import User, Tweet, followers
 from forms import RegisterForm, LoginForm, TweetForm
 
 # Flask imports
-from flask import Flask, render_template, url_for, redirect, request, abort
+from flask import Flask, render_template, url_for, redirect, request, abort, jsonify
 from flask_login import login_user, login_required, current_user, logout_user
 from flask_uploads import UploadSet, configure_uploads, IMAGES
 
